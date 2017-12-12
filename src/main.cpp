@@ -101,6 +101,16 @@ int main() {
           double steer_value;
           double throttle_value;
 
+          // fit a polynomial to the x/y coordinates
+          auto coeffs = polyfit(ptsx, pptsy, 1);
+
+          // calculate the cross-track-error
+          double cte = polyeval(coeffs, px) - py;
+
+          // calculate the orientation error
+          double epsi = psi - atan(coeffs[1]);
+
+
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].

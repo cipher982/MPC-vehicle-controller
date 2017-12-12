@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 0;
-double dt = 0;
+size_t N = 5;
+double dt = .05;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -33,6 +33,33 @@ class FG_eval {
     // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
     // NOTE: You'll probably go back and forth between this function and
     // the Solver function below.
+
+    fg[0] = 0;
+
+    // cost function
+    for (ing t=0; t < N; t++) {
+      fg[0] += cppAD::pow(vars[cte_start + t], 2); // cte 
+      fg[0] += cppAD::pow(vars[epsi_start + t], 2); // heading error
+      fg[0] += cppAD::pow(vars[v_start + t] - ref_v, 2); // velocity error
+    }
+
+    // TODO: Minimize use of actuators
+/*
+    // Minimize the use of actuators.
+    for (int t = 0; t < N - 1; t++) {
+      fg[0] += CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t], 2);
+    }
+*/
+    // TODO: Minimize the value gap between sequential actions
+/*
+    // Minimize the value gap between sequential actuations.
+    for (int t = 0; t < N - 2; t++) {
+      fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    }
+*/
+
   }
 };
 
@@ -52,9 +79,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // element vector and there are 10 timesteps. The number of variables is:
   //
   // 4 * 10 + 2 * 9
-  size_t n_vars = 0;
+  //size_t n_vars = 0;
+
+  // 5 timestamps * 2 actuators * 6 states = 60 total
+  size_t n_vars = 60;
+
   // TODO: Set the number of constraints
-  size_t n_constraints = 0;
+  size_t n_constraints = 2;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
