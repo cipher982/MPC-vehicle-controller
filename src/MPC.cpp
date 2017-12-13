@@ -21,6 +21,17 @@ double dt = .05;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
+// indices for the vars vector to unpack it
+size_t x_start = 0;
+size_t y_start = x_start + N;
+size_t psi_start = y_start + N;
+size_t v_start = psi_start + N;
+size_t cte_start = v_start + N;
+size_t epsi_start = cte_start + N;
+size_t delta_start = epsi_start + N;
+size_t a_start = delta_start + N - 1;
+
+
 class FG_eval {
  public:
   // Fitted polynomial coefficients
@@ -60,6 +71,14 @@ class FG_eval {
     }
 */
 
+
+
+
+
+
+
+
+
   }
 };
 
@@ -97,7 +116,10 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
-
+  for (int i = 0; i < n_vars; i++) {
+    vars_lowerbound[i] = -1;
+    vars_upperbound[i] = 1;
+  }
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
   Dvector constraints_lowerbound(n_constraints);

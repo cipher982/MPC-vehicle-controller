@@ -101,14 +101,64 @@ int main() {
           double steer_value;
           double throttle_value;
 
+/*   //////////// MY CODE
+
           // fit a polynomial to the x/y coordinates
-          auto coeffs = polyfit(ptsx, pptsy, 1);
+          auto coeffs = polyfit(ptsx, pptsy, 3);
 
           // calculate the cross-track-error
           double cte = polyeval(coeffs, px) - py;
 
           // calculate the orientation error
           double epsi = psi - atan(coeffs[1]);
+
+*/   //////////// END MY CODE
+
+
+
+////////////// TEST WORKING CODE
+
+          //converting to car's local coordinate system          
+          Eigen::VectorXd xvals(ptsx.size()); 
+          Eigen::VectorXd yvals(ptsx.size());
+          Eigen::MatrixXd translation(2,2);
+          translation <<  cos(-psi), -sin(-psi),
+                          sin(-psi),  cos(-psi);
+          Eigen::VectorXd pnt(2);
+          Eigen::VectorXd local_pnt(2);          
+          //std::cout << "x,y,psi: " << px<<", "<<py<<", "<< psi<<std::endl;
+          for (int i = 0; i < ptsx.size(); i++) {
+            //converting into the vehicle coordinate system
+            pnt << ptsx[i] - px, ptsy[i] - py;
+            local_pnt = translation * pnt;
+            xvals[i] = local_pnt[0];
+            yvals[i] = local_pnt[1];
+            //std::cout << "pnt: " << pnt[0] <<", "<<pnt[1] << std::endl;
+            //std::cout << "lcl: " << local_pnt[0] <<", "<<local_pnt[1] << std::endl;
+          }
+          
+          //fitting a 3rd-order polynomial into the provided waypoints
+          auto coeffs = polyfit(xvals, yvals, 3);
+
+          /*
+          * Calculate steering angle and throttle using MPC.
+          *
+          * Both are in between [-1, 1].
+          *
+          */
+          double cte = coeffs[0];
+          double epsi = -atan(coeffs[1]);
+
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi;
+
+          auto vars = mpc.Solve(state, coeffs);
+          double steer_value = vars[0];
+          double throttle_value = vars[1];
+
+/////////////// END TEST WORKING CODE
+
+
 
 
           json msgJson;
