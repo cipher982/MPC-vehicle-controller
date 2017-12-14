@@ -21,6 +21,9 @@ double dt = .05;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
+// Desired speed for the model
+const double desired_speed = 50.0;
+
 // indices for the vars vector to unpack it
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -48,10 +51,10 @@ class FG_eval {
     fg[0] = 0;
 
     // cost function
-    for (ing t=0; t < N; t++) {
-      fg[0] += cppAD::pow(vars[cte_start + t], 2); // cte 
-      fg[0] += cppAD::pow(vars[epsi_start + t], 2); // heading error
-      fg[0] += cppAD::pow(vars[v_start + t] - ref_v, 2); // velocity error
+    for (int t=0; t < N; t++) {
+      fg[0] += CppAD::pow(vars[cte_start + t], 2); // cte 
+      fg[0] += CppAD::pow(vars[epsi_start + t], 2); // heading error
+      fg[0] += CppAD::pow(vars[v_start + t] - desired_speed, 2); // velocity error
     }
 
     // Minimize the use of actuators.
@@ -91,6 +94,14 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
+  //state vector
+  double x = state[0];
+  double y = state[1];
+  double psi = state[2];
+  double v = state[3];
+  double cte = state[4];
+  double epsi = state[5];
+
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:
@@ -99,10 +110,10 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //size_t n_vars = 0;
 
   // 5 timestamps * 2 actuators * 6 states = 60 total
-  size_t n_vars = 60;
+  size_t n_vars = N * 6 + (N - 1) * 2;
 
   // TODO: Set the number of constraints
-  size_t n_constraints = 2;
+  size_t n_constraints = N * 6;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -110,6 +121,14 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   for (int i = 0; i < n_vars; i++) {
     vars[i] = 0;
   }
+
+  // Set the initial variable values
+  vars[x_start] = x;
+  vars[y_start] = y;
+  vars[psi_start] = psi;
+  vars[v_start] = v;
+  vars[cte_start] = cte;
+  vars[epsi_start] = epsi;
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
