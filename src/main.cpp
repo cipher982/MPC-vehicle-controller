@@ -136,7 +136,6 @@ int main() {
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           //msgJson["steering_angle"] = steer_value / steer_normalizer * -1.0;
           msgJson["steering_angle"] = steer_value / deg2rad(25) * -1.0;
-
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
@@ -154,7 +153,7 @@ int main() {
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
-          //Display the waypoints/reference line
+          // Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
