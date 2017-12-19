@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // Set the timestep length and duration
-size_t N = 10;
+size_t N = 7;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // desired speed
-const double desired_speed = 65.0;
+const double desired_speed = 60.0;
 
 //indexes to reference variables inside the `vars` vector
 size_t x_start     = 0;
@@ -48,11 +48,11 @@ class FG_eval {
     for (int t = 0; t < N; t++){
       
       // cte (cross-track error)
-      fg[0] += 2.0*CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 20.0*CppAD::pow(vars[cte_start + t], 2);
       // trajectory error
-      fg[0] += 1300.0*CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += 10000.0*CppAD::pow(vars[epsi_start + t], 2);
       // speed error
-      fg[0] += 0.25*CppAD::pow(vars[v_start + t] - desired_speed, 2);  
+      fg[0] += 2*CppAD::pow(vars[v_start + t] - desired_speed, 2);  
       
 
       // cte (cross-track error)
@@ -73,7 +73,7 @@ class FG_eval {
       // actuator shock absorber
       if (t < N - 2) {
         //steering
-        fg[0] += 10000.0*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+        fg[0] += 30000.0*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
         //fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
 
         //acceleration
@@ -178,16 +178,16 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // degrees (values in radians).
   // NOTE: Feel free to change this to something else.
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.5;
-    vars_upperbound[i] =  0.5;
+    // limits set at +/- 0.4363 (radian) to represent 25 degrees
+    vars_lowerbound[i] = -0.4363;
+    vars_upperbound[i] =  0.4363;
   }
 
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    // limits set at +/- 0.4363 (radian) to represent 25 degrees
-    vars_lowerbound[i] = -0.4363;
-    vars_upperbound[i] =  0.4363;
+    vars_lowerbound[i] = -1;
+    vars_upperbound[i] =  1;
   } 
   
 
