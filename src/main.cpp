@@ -95,8 +95,8 @@ int main() {
           // simulate latency compensation
           const double latency = 0.1;
 
-          //px = px + v * cos(psi) * latency;
-         // py = py + v * sin(psi) * latency;
+          px = px + v * cos(psi) * latency;
+          py = py + v * sin(psi) * latency;
           
           //converting to car's local coordinate system          
           Eigen::VectorXd xvals(ptsx.size()); 
