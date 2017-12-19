@@ -42,7 +42,7 @@ Below you can see a high-level view of MPC operation with a single discrete inpu
 * Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
 
 
-### Basic Build Instructions
+### Basic Build Instructions (I used Mac, have not tested other platforms)
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
