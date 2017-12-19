@@ -71,7 +71,7 @@ int main() {
   MPC mpc;
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
-  //h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  // h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
   
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -91,6 +91,12 @@ int main() {
           double py  = j[1]["y"];
           double psi = j[1]["psi"];
           double v   = j[1]["speed"];
+
+          // simulate latency compensation
+          const double latency = 0.1;
+
+          //px = px + v * cos(psi) * latency;
+         // py = py + v * sin(psi) * latency;
           
           //converting to car's local coordinate system          
           Eigen::VectorXd xvals(ptsx.size()); 
@@ -107,8 +113,8 @@ int main() {
             local_pnt = translation * pnt;
             xvals[i] = local_pnt[0];
             yvals[i] = local_pnt[1];
-            //std::cout << "pnt: " << pnt[0]       <<", "<< pnt[1]       << std::endl;
-            //std::cout << "lcl: " << local_pnt[0] <<", "<< local_pnt[1] << std::endl;
+            // std::cout << "pnt: " << pnt[0]       <<", "<< pnt[1]       << std::endl;
+            // std::cout << "lcl: " << local_pnt[0] <<", "<< local_pnt[1] << std::endl;
           }
           
           // add the 3rd order polynomial to the coeffecients
@@ -138,11 +144,11 @@ int main() {
           msgJson["steering_angle"] = steer_value / deg2rad(25) * -1.0;
           msgJson["throttle"] = throttle_value;
 
-          //Display the MPC predicted trajectory 
+          // Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
+          // .. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
           for (int i = 2; i < vars.size(); i=i+2){
