@@ -79,7 +79,7 @@ This is a multivariable control algorithm that uses:
 * an optimization of a cost function (CTE, heading, velocity) over the prediction horizon
 
 Below is the mathematical notation for some of the state prediction updates:
-![MPC Overview](https://github.com/cipher982/MPC-vehicle-controller/blob/master/media/MPC_overview.png "MPC Overview")
+![MPC Overview](https://github.com/cipher982/MPC-vehicle-controller/blob/master/media/mpc_overview.png "MPC Overview")
 
 ### The code to implement these is as follows:
 ``` cpp
