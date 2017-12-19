@@ -1,21 +1,32 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+### MPC Vehicle Controller Project
+##### David Rose
 
----
 
-## Dependencies
+-------------------------
+### Overview 
+Through using a Unity game engine simulation of a vehicle on a track will be controlled using MPC (model predictive control) process control. This is similar to [my other project on GitHub that used a PID controller for this same task](https://github.com/cipher982/PID-Control). The difference is that an MPC controller (forgive the redundancy of words here, I prefer this phrasing) can effectively model future time states and plan ahead. The model was optimize throughout this finite time-horizon each actuator, which in this case is steering and throttle/brake. Throttle and braking are controlled via the same actuation via values with a range of  ```[-1,1]```.
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1(mac, linux), 3.81(Windows)
-  * Linux: make is installed by default on most Linux distros
+
+Below you can see a high-level view of MPC operation with a single discrete input. Keep in mind this model uses two inputs (actuations) and operates on a continuous scale rather than discrete.
+![MPC Diagram](https://github.com/cipher982/MPC-vehicle-controller/blob/master/media/434px-MPC_scheme_basic.svg.png "MPC Diagram")
+
+### Steps Involved:
+- Understand methods of accessing and controlling the car.
+- Convert the MPC method to C++ code and implement in both main.cpp and mpc.cpp to control the vehicle
+- Observe and take into account the simulated latency (in this case 100ms) of the sensor stack and optimize the model using this knowledge.
+
+### Dependencies
+- cmake >= 3.5
+- All OSes: [click here for installation instructions](https://cmake.org/install/)
+- make >= 4.1(mac, linux), 3.81(Windows)
+- Linux: make is installed by default on most Linux distros
   * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
   * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
+- gcc/g++ >= 5.4
   * Linux: gcc / g++ is installed by default on most Linux distros
   * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
   * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
+- [uWebSockets](https://github.com/uWebSockets/uWebSockets)
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
@@ -25,84 +36,116 @@ Self-Driving Car Engineer Nanodegree Program
     ```
     Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
 
-* **Ipopt and CppAD:** Please refer to [this document](https://github.com/udacity/CarND-MPC-Project/blob/master/install_Ipopt_CppAD.md) for installation instructions.
+* **Ipopt** and **CppAD:** Please refer to [this document](https://github.com/udacity/CarND-MPC-Project/blob/master/install_Ipopt_CppAD.md) for installation instructions.
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
 * Simulator. You can download these from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
 * Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
 
 
-## Basic Build Instructions
+### Basic Build Instructions
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
 
-## Tips
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.)
-4.  Tips for setting up your environment are available [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
-5. **VM Latency:** Some students have reported differences in behavior using VM's ostensibly a result of latency.  Please let us know if issues arise as a result of a VM environment.
+### Vehicle Control API
+Using a WebSocket server, the C++ console program communicates with the driving simulator through a JSON file that takes in and reads out various telemetry variables. These include: CTE, speed, angle, throttle, and steering angle.
 
-## Editor Settings
+In this MPC controller I will need to observe the CTE, heading, and speed, while pushing throttle (including braking for negative values under 0) and steering angle in an attempt to keep up the highest possible speed while staying safely within the lane. Though in this case I have locked speed to a specific value to aim for at 60mph. Below is the code for reading the telemetry into C++:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
 
-## Code Style
+``` cpp 
+// j[1] is the data JSON object
+vector<double> ptsx = j[1]["ptsx"];
+vector<double> ptsy = j[1]["ptsy"];
+double px  = j[1]["x"];
+double py  = j[1]["y"];
+double psi = j[1]["psi"];
+double v   = j[1]["speed"];
+```
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
 
-## Project Instructions and Rubric
+### MPC Controller
+The aim of this is to model the behavior of dynamical systems, in this case the vehicle positioning and trajectory. This is a kinematic model that is a more advanced version of the [PID controller from my other repo](https://github.com/cipher982/PID-Control) that does not take into account future time states. This will model the change in dependent variables that are caused by changes in the independent variables. 
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+This is an iterative process based on a finite-horizon optimization of states. We will attempt to minimize the cost (CTE, heading, velocity) of the vehicle on the track. This is what is called on online model, in that it calculates on-the-fly.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+This is a multivariable control algorithm that uses:
+* a dynamical model of the process 
+* a history of past actuations
+* an optimization of a cost function (CTE, heading, velocity) over the prediction horizon
 
-## Hints!
+Below is the mathematical notation for some of the state prediction updates:
+![MPC Overview](https://github.com/cipher982/MPC-vehicle-controller/blob/master/media/mpc_overview.png "MPC Overview")
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+### The code to implement these is as follows:
+``` cpp
+      fg[1 + x_start + t]    = x1    - (x0 + v0 * CppAD::cos(psi0) * dt);
+      fg[1 + y_start + t]    = y1    - (y0 + v0 * CppAD::sin(psi0) * dt);
+      fg[1 + psi_start + t]  = psi1  - (psi0 + v0 * delta0 / Lf * dt);
+      fg[1 + v_start + t]    = v1    - (v0 + a0 * dt);
+      fg[1 + cte_start + t]  = cte1  - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+      fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt); 
+```
+### Variables above, explained:
+* **X** - Vehicle location in X coordinate
+* **Y** - Vehicle location in Y coordinate
+* **PSI** Vehicle heading (simulation works with radians, algorithm uses degrees). The two formula used to convert back and forth between the two are:
+``` cpp 
+double deg2rad(double x) { return x * pi() / 180; }
+double rad2deg(double x) { return x * 180 / pi(); } 
+```
+* **CTE** Cross-Track-Error (distance of vehicle from ideal (middle) line on track)
+* **EPSI** Vehicle heading error (difference from ideal and actual, ideal is tangent to road curve)
 
-## Call for IDE Profiles Pull Requests
+### Tuning the Model
+For me personally, I found these variables to work best with my model at a target speed of 50mph:
+* **Timestep Length** - ```N``` - For this project I used a length of **12** as it predicted around longer turns but did not run too slowly for my computer. Though I have a feeling on slower CPUs it may struggle. 
+* **Duration** - ```dt``` - Elapsed time at **100** should coincide very cleanly with the *100ms* delay built in to the model. 
 
-Help your fellow students!
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+### Fitting the Polynomial
+Using the code below, a 3rd order polynomial is fitted to the ideal vehicle path for the future to best reduce the total error value. Using 3 polynomials allows for a more advanced curvature on some tighter sections of road. 
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+``` cpp
+// Fit a polynomial.
+// Adapted from
+// https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
+Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order) {
+  assert(xvals.size() == yvals.size());
+  assert(order >= 1 && order <= xvals.size() - 1);
+  Eigen::MatrixXd A(xvals.size(), order + 1);
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+  for (int i = 0; i < xvals.size(); i++) {
+    A(i, 0) = 1.0;
+  }
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+  for (int j = 0; j < xvals.size(); j++) {
+    for (int i = 0; i < order; i++) {
+      A(j, i + 1) = A(j, i) * xvals(j);
+    }
+  }
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+  auto Q = A.householderQr();
+  auto result = Q.solve(yvals);
+  return result;
+}
+```
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+### Simulating the Sensor Stack Latency 
+In main.cpp I incremented the position forward in time with ``` latency = 0.1``` to represent 100ms delay in positioning detection. 
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+``` cpp
+         // simulate latency compensation
+          const double latency = 0.1;
+
+          px = px + v * cos(psi) * latency;
+          py = py + v * sin(psi) * latency;
+```
+
+
+
+
