@@ -93,13 +93,13 @@ Below is the mathematical notation for some of the state prediction updates:
 ### Variables above, explained:
 * **X** - Vehicle location in X coordinate
 * **Y** - Vehicle location in Y coordinate
-* **PSI** Vehicle heading (simulation works with radians, algorithm uses degrees). The two formula used to convert back and forth between the two are:
+* **PSI** - Vehicle heading (simulation works with radians, algorithm uses degrees). The two formula used to convert back and forth between the two are:
 ``` cpp 
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); } 
 ```
-* **CTE** Cross-Track-Error (distance of vehicle from ideal (middle) line on track)
-* **EPSI** Vehicle heading error (difference from ideal and actual, ideal is tangent to road curve)
+* **CTE** - Cross-Track-Error (distance of vehicle from ideal (middle) line on track)
+* **EPSI** - Vehicle heading error (difference from ideal and actual, ideal is tangent to road curve)
 
 ### Tuning the Model
 For me personally, I found these variables to work best with my model at a target speed of 50mph:
