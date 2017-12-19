@@ -103,7 +103,7 @@ double rad2deg(double x) { return x * 180 / pi(); }
 
 ### Tuning the Model
 For me personally, I found these variables to work best with my model at a target speed of 50mph:
-* **Timestep Length** - ```N``` - For this project I used a length of **12** as it predicted around longer turns but did not run too slowly for my computer. Though I have a feeling on slower CPUs it may struggle. 
+* **Timestep Length** - ```N``` - For this project I used a length of **7** as it predicted enough around turns but did not run too slowly for my computer. Though I have a feeling on slower CPUs it may struggle. 
 * **Duration** - ```dt``` - Elapsed time at **100** should coincide very cleanly with the *100ms* delay built in to the model. 
 
 
