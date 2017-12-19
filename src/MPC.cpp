@@ -185,9 +185,10 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (int i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -1.0;
-    vars_upperbound[i] =  1.0;
-  }
+    // limits set at +/- 0.4363 (radian) to represent 25 degrees
+    vars_lowerbound[i] = -0.4363;
+    vars_upperbound[i] =  0.4363;
+  } 
   
 
   // *** Lower and upper limits for the constraints
