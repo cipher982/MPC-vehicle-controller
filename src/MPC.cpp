@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // Set the timestep length and duration
-size_t N = 12;
+size_t N = 10;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // desired speed
-const double desired_speed = 50.0;
+const double desired_speed = 65.0;
 
 //indexes to reference variables inside the `vars` vector
 size_t x_start     = 0;
